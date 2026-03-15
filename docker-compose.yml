@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: drishyamitra
+      POSTGRES_PASSWORD: drishyamitra_secret
+      POSTGRES_DB: drishyamitra_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ── FastAPI Backend ───────────────────────────────────────
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://drishyamitra:drishyamitra_secret@db:5432/drishyamitra_db
+      UPLOAD_DIR: /storage/uploads
+    env_file:
+      - ./backend/.env.example
+    volumes:
+      - ./storage:/storage
+
+  # ── React Frontend ───────────────────────────────────────
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
